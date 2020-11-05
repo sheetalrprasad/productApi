@@ -43,6 +43,11 @@ func NewProducts(l *log.Logger) *Products {
 	return &Products{l}
 }
 
+// swagger:route GET /products products listProducts
+// Return a list of products from the database
+// responses:
+//	200:productsResponse
+
 // GetProducts returns a list of all products in the system
 func (p *Products) GetProducts(rw http.ResponseWriter, r *http.Request) {
 	lp := data.GetProducts()
@@ -58,6 +63,42 @@ func (p *Products) AddProduct(rw http.ResponseWriter, r *http.Request) {
 	prod := r.Context().Value(KeyProduct{}).(data.Product)
 	data.AddProduct(&prod)
 }
+
+// swagger:route DELETE /products/{id} products deleteProduct
+// Update a products details
+//
+// responses:
+//	201:noContentResponse
+//  404:errorResponse
+//  501:errorResponse
+
+// Delete handles DELETE requests and removes items from the database
+// DeleteProducts creates a new product to the system
+func (p *Products) DeleteProduct(rw http.ResponseWriter, r *http.Request) {
+	p.l.Println("Handling the DELETE")
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(rw, "Cannot Caonvert ID to int", http.StatusBadRequest)
+	}
+	err = data.DeleteProduct(id)
+	if err == data.ErrProductNotFound {
+		http.Error(rw, "Product data not found", http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(rw, "Product data not found", http.StatusInternalServerError)
+		return
+	}
+}
+
+// swagger:route PUT /products products updateProduct
+// Update a products details
+//
+// responses:
+//	201:noContentResponse
+//  404:errorResponse
+//  422:errorValidation
 
 // UpdateProduct modifies an existing product in the system
 func (p *Products) UpdateProduct(rw http.ResponseWriter, r *http.Request) {
